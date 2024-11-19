@@ -1,55 +1,33 @@
-#TODO:
-# FR and coiling will randomly stop early
 
 import cv2
-#from matplotlib import pyplot as plt
 import numpy as np
 import serial
 import time
-
 global ser
-global arduinoQueue
-global localQueue
-
-
+global xVals
+global yVals
 ################################################################################################
 ## Define some functions
 ################################################################################################
-
-
-def packAndSendMsg(Command):
+def packAndSendMsg(P1, P2, P3):
     #Packs together our message, taking the command character and the text entries and sends it over serial
     global ser
-    print(Command)
-    Parameters = ReadInputs()
-    msg = Command  # Add command indicator to msg
-
-    for i in Parameters:
-        msg = msg + ',' + i  # add the parameters to the message
-
+    print([P1, P2, P3])
+    msg = 'A'+ ',' + str(P1) + ',' + str(P2) + ',' + str(P3) # Build Message
     msg = msg + 'Z'  # add end of message indicator
-
     ser.write(bytes(str(msg), 'UTF-8'))
 
-# arduinoQueue = queue.Queue()
-# localQueue = queue.Queue()
-
-# def listenToArduino():
-#     message = b''
-#     while True:
-#         incoming = ser.read()
-#         if (incoming == b'\n'):
-#             arduinoQueue.put(message.decode('utf-8').strip().upper())
-#             message = b''
-#         else:
-#             if ((incoming != b'') and (incoming != b'\r')):
-#                  message += incoming
+def GetContinuumRobotControl():
+    global xVals, yVals
+    P1 =1
+    P2 =1
+    P3 = 1
+    return P1, P2, P3
 
 
 ser = serial.Serial(port= 'COM4', baudrate=9600, timeout=10)  # create Serial Object, baud = 9600, read times out after 10s
 time.sleep(.1)  # delay 3 seconds to allow serial com to get established
 print("Connected")
-
 
 ################################################################################################
 ## Robot Controls
@@ -60,6 +38,10 @@ video_0 = cv2.VideoCapture(0)
 #specify color HSV bounds
 lower_bound = np.array([10, 0,245])
 upper_bound = np.array([200, 10, 255])
+
+
+xVals = []
+yVals = []
 
 while(True):
 
@@ -115,13 +97,24 @@ while(True):
             C[i, 1] = int(M['m01'] / M['m00'])  # cy
             output[C[i, 1] - 2:C[i, 1] + 2, C[i, 0] - 2:C[i, 0] + 2] = [255, 255, 255]
             output = cv2.putText(output, str(i), (C[i, 0], C[i, 1]), cv2.FONT_HERSHEY_SIMPLEX, 1, (245, 244, 66),2, cv2.LINE_AA)
-        print([C[0, 0],C[0, 1]])
+
+        xVals.append(C[0, 0].item())
+        yVals.append(C[0, 1].item())
+        print([xVals[-1], yVals[-1]])
+
+        P1, P2, P3 =GetContinuumRobotControl()
+        packAndSendMsg(P1,P2,P3)
 
     if len(contours) > 1:
         print("Error: Multiple Centers")
-        cv2.line(output, (C[0,0],C[0,1]),(C[1,0],C[1,1]), (255, 0, 0), 2 )
+        cv2.line(output, (C[0,0],C[0,1]),(C[1,0],C[1,1]), (255, 0, 0), 2)
 
     cv2.imshow('Output', output)
+
+
+
+
+
 
     if cv2.waitKey(1) & 0xFF==ord('a'):
         break
