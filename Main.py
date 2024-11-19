@@ -3,25 +3,41 @@ import cv2
 import numpy as np
 import serial
 import time
+import math
+
 global ser
 global xVals
 global yVals
+global tik
+global tok
+
+tik = time.time() #start clock
+tok = tik
+
 ################################################################################################
 ## Define some functions
 ################################################################################################
 def packAndSendMsg(P1, P2, P3):
     #Packs together our message, taking the command character and the text entries and sends it over serial
     global ser
-    print([P1, P2, P3])
+    #print([P1, P2, P3])
     msg = 'A'+ ',' + str(P1) + ',' + str(P2) + ',' + str(P3) # Build Message
     msg = msg + 'Z'  # add end of message indicator
     ser.write(bytes(str(msg), 'UTF-8'))
 
 def GetContinuumRobotControl():
-    global xVals, yVals
-    P1 =1
-    P2 =1
-    P3 = 1
+    global xVals, yVals, tik, tok
+
+    freq = 0.5
+    maxP = 100
+    print(tok-time.time())
+    tok  =  time.time() # get current time
+    t = tok-tik # time elapsed since start of program
+
+    P1 = int(maxP / 2. + (maxP / 2.) * math.sin(2. * 3.141549 * freq * t))
+    P2 = int(maxP / 2. + (maxP / 2.) * math.sin(2. * 3.141549 * freq * t + 120.0 * 3.141549 / 180.))
+    P3 = int(maxP / 2. + (maxP / 2.) * math.sin(2. * 3.141549 * freq * t + 240.0 * 3.141549 / 180.))
+
     return P1, P2, P3
 
 
@@ -102,7 +118,7 @@ while(True): # create our loop
         #also lets add the center point of contour 0 to our list of coordinates
         xVals.append(C[0, 0].item())
         yVals.append(C[0, 1].item())
-        print([xVals[-1], yVals[-1]])
+        #print([xVals[-1], yVals[-1]])
 
         P1, P2, P3 =GetContinuumRobotControl()
         packAndSendMsg(P1,P2,P3)
