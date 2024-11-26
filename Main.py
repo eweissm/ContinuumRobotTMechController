@@ -4,6 +4,8 @@ import numpy as np
 import serial
 import time
 import math
+import csv
+import matplotlib.pyplot as plt
 
 global ser
 global xVals
@@ -30,7 +32,7 @@ def GetContinuumRobotControl():
 
     freq = 0.1
     maxP = 100
-    print(tok-time.time())
+    #print(tok-time.time())
     tok  =  time.time() # get current time
     t = tok-tik # time elapsed since start of program
 
@@ -53,11 +55,11 @@ video_0 = cv2.VideoCapture(1)
 
 #specify color HSV bounds
 # lower boundary RED color range values; Hue (0 - 10)
-lower1 = np.array([0, 30, 20])
+lower1 = np.array([0, 30, 100])
 upper1 = np.array([20, 255, 255])
 
 # upper boundary RED color range values; Hue (160 - 180)
-lower2 = np.array([160, 30, 20])
+lower2 = np.array([160, 30, 100])
 upper2 = np.array([179, 255, 255])
 
 # create empty list which will store our trajectory data
@@ -123,16 +125,21 @@ while(True): # create our loop
             output = cv2.putText(output, str(i), (C[i, 0], C[i, 1]), cv2.FONT_HERSHEY_SIMPLEX, 1, (245, 244, 66),2, cv2.LINE_AA)
 
         #also lets add the center point of contour 0 to our list of coordinates
-        xVals.append(C[0, 0].item())
-        yVals.append(C[0, 1].item())
+        # xVals.append(C[0, 0].item())
+        # yVals.append(C[0, 1].item())
         #print([xVals[-1], yVals[-1]])
 
         P1, P2, P3 =GetContinuumRobotControl()
         packAndSendMsg(P1,P2,P3)
 
-    if len(contours) > 1:
-        print("Error: Multiple Centers")
-        cv2.line(output, (C[0,0],C[0,1]),(C[1,0],C[1,1]), (255, 0, 0), 2)
+        if len(contours) > 1:
+            #print("Error: Multiple Centers")
+            cv2.line(output, (C[0,0],C[0,1]),(C[1,0],C[1,1]), (255, 0, 0), 2)
+        else:
+
+            xVals.append(C[0, 0].item())
+            yVals.append(C[0, 1].item())
+            print([xVals[-1], yVals[-1]])
 
     #Show video with contours
     cv2.imshow('Output', output)
@@ -146,3 +153,24 @@ while(True): # create our loop
 
 video_0.release()
 cv2.destroyAllWindows()
+
+# output_file = 'robot_coordinates.csv'
+#
+# # Write to CSV
+# with open(output_file, mode='w', newline='') as file:
+#     writer = csv.writer(file)
+#     # Write header
+#     writer.writerow(['X', 'Y'])
+#     # Write data
+#     for x, y in zip(xVals, yVals):
+#         writer.writerow([x, y])
+#
+# print(f"Coordinates have been saved to {output_file}")
+plt.plot(xVals, yVals)
+
+# Add labels and title
+plt.xlabel('x-axis')
+plt.ylabel('y-axis')
+
+# Display the plot
+plt.show()
