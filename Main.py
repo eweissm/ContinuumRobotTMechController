@@ -29,6 +29,15 @@ def packAndSendMsg(P1, P2, P3):
 
 def GetContinuumRobotControl():
     global xVals, yVals, tik, tok
+    xCenter = 250
+    yCenter = 250
+    RadiusDesired = 150
+
+    ActualRadius = math.sqrt((xVals[-1]-xCenter)**2 + (yVals[-1]-yCenter)**2)
+
+    error = RadiusDesired - ActualRadius
+
+    kp = .1
 
     freq = 0.1
     maxP = 100
@@ -36,25 +45,25 @@ def GetContinuumRobotControl():
     tok  =  time.time() # get current time
     t = tok-tik # time elapsed since start of program
     pi = 3.14159
+    thetaDesired = (t * 2 * pi * freq) % (2 * pi)
 
-    # a = 10.
-    # P1 = int(maxP / 2. + (maxP / 2.) * math.sin(2. * 3.141549 * freq * t) + max(0, math.sin(2. * 3.141549 * freq * t)*a))
-    # P2 = int(maxP / 2. + (maxP / 2.) * math.sin(2. * 3.141549 * freq * t + 120.0 * 3.141549 / 180.)+ max(0, math.sin(2. * 3.141549 * freq * t+ 120.0 * 3.141549 / 180.)*a))
-    # P3 = int(maxP / 2. + (maxP / 2.) * math.sin(2. * 3.141549 * freq * t + 240.0 * 3.141549 / 180.)+ max(0, math.sin(2. * 3.141549 * freq * t + 240.0 * 3.141549 / 180.)*a))
+    P1 = min(maxP, int(maxP / 2. + (maxP / 2.) * math.sin(thetaDesired ) + kp*error* math.sin(thetaDesired)  ))
+    P2 = min(maxP, int(maxP / 2. + (maxP / 2.) * math.sin(thetaDesired + 120.0 * pi / 180.) + kp*error* math.sin(thetaDesired + 120.0 * pi / 180.)))
+    P3 = min(maxP, int(maxP / 2. + (maxP / 2.) * math.sin( thetaDesired + 240.0 * pi / 180.)+ kp*error* math.sin(thetaDesired + 240.0 * pi / 180.)))
 
-    thetaDesired = (t*2*pi*freq)%(2*pi)
-    if thetaDesired>=0 and thetaDesired<= (2*pi/3):
-        P1 = (maxP/2) + (maxP/2) *math.cos(thetaDesired*6/4)
-        P2 = (maxP/2) + (maxP/2) *math.cos(thetaDesired*6/4-pi)
-        P3 = 0
-    elif thetaDesired>(2*pi/3) and thetaDesired<= (4*pi/3):
-        P1 = 0
-        P2 = (maxP/2) + (maxP/2) *math.cos(thetaDesired*6/4-pi)
-        P3 = (maxP/2) + (maxP/2) *math.cos(thetaDesired*6/4)
-    else:
-        P1 = (maxP/2) + (maxP/2) *math.cos(thetaDesired*6/4-pi)
-        P2 = 0
-        P3 = (maxP/2) + (maxP/2) *math.cos(thetaDesired*6/4)
+
+    # if thetaDesired>=0 and thetaDesired<= (2*pi/3):
+    #     P1 = (maxP/2) + (maxP/2) *math.cos(thetaDesired*6/4)
+    #     P2 = (maxP/2) + (maxP/2) *math.cos(thetaDesired*6/4-pi)
+    #     P3 = 0
+    # elif thetaDesired>(2*pi/3) and thetaDesired<= (4*pi/3):
+    #     P1 = 0
+    #     P2 = (maxP/2) + (maxP/2) *math.cos(thetaDesired*6/4-pi)
+    #     P3 = (maxP/2) + (maxP/2) *math.cos(thetaDesired*6/4)
+    # else:
+    #     P1 = (maxP/2) + (maxP/2) *math.cos(thetaDesired*6/4-pi)
+    #     P2 = 0
+    #     P3 = (maxP/2) + (maxP/2) *math.cos(thetaDesired*6/4)
     return P1, P2, P3
 
 
@@ -144,9 +153,6 @@ while(True): # create our loop
         # yVals.append(C[0, 1].item())
         #print([xVals[-1], yVals[-1]])
 
-        P1, P2, P3 =GetContinuumRobotControl()
-        packAndSendMsg(P1,P2,P3)
-
         if len(contours) > 1:
             #print("Error: Multiple Centers")
             cv2.line(output, (C[0,0],C[0,1]),(C[1,0],C[1,1]), (255, 0, 0), 2)
@@ -155,6 +161,8 @@ while(True): # create our loop
             xVals.append(C[0, 0].item())
             yVals.append(C[0, 1].item())
             print([xVals[-1], yVals[-1]])
+            P1, P2, P3 = GetContinuumRobotControl()
+            packAndSendMsg(P1, P2, P3)
 
     #Show video with contours
     cv2.imshow('Output', output)
