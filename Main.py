@@ -35,11 +35,26 @@ def GetContinuumRobotControl():
     #print(tok-time.time())
     tok  =  time.time() # get current time
     t = tok-tik # time elapsed since start of program
+    pi = 3.14159
 
-    P1 = int(maxP / 2. + (maxP / 2.) * math.sin(2. * 3.141549 * freq * t))
-    P2 = int(maxP / 2. + (maxP / 2.) * math.sin(2. * 3.141549 * freq * t + 120.0 * 3.141549 / 180.))
-    P3 = int(maxP / 2. + (maxP / 2.) * math.sin(2. * 3.141549 * freq * t + 240.0 * 3.141549 / 180.))
+    # a = 10.
+    # P1 = int(maxP / 2. + (maxP / 2.) * math.sin(2. * 3.141549 * freq * t) + max(0, math.sin(2. * 3.141549 * freq * t)*a))
+    # P2 = int(maxP / 2. + (maxP / 2.) * math.sin(2. * 3.141549 * freq * t + 120.0 * 3.141549 / 180.)+ max(0, math.sin(2. * 3.141549 * freq * t+ 120.0 * 3.141549 / 180.)*a))
+    # P3 = int(maxP / 2. + (maxP / 2.) * math.sin(2. * 3.141549 * freq * t + 240.0 * 3.141549 / 180.)+ max(0, math.sin(2. * 3.141549 * freq * t + 240.0 * 3.141549 / 180.)*a))
 
+    thetaDesired = (t*2*pi*freq)%(2*pi)
+    if thetaDesired>=0 and thetaDesired<= (2*pi/3):
+        P1 = (maxP/2) + (maxP/2) *math.cos(thetaDesired*6/4)
+        P2 = (maxP/2) + (maxP/2) *math.cos(thetaDesired*6/4-pi)
+        P3 = 0
+    elif thetaDesired>(2*pi/3) and thetaDesired<= (4*pi/3):
+        P1 = 0
+        P2 = (maxP/2) + (maxP/2) *math.cos(thetaDesired*6/4-pi)
+        P3 = (maxP/2) + (maxP/2) *math.cos(thetaDesired*6/4)
+    else:
+        P1 = (maxP/2) + (maxP/2) *math.cos(thetaDesired*6/4-pi)
+        P2 = 0
+        P3 = (maxP/2) + (maxP/2) *math.cos(thetaDesired*6/4)
     return P1, P2, P3
 
 
@@ -154,18 +169,18 @@ while(True): # create our loop
 video_0.release()
 cv2.destroyAllWindows()
 
-# output_file = 'robot_coordinates.csv'
-#
-# # Write to CSV
-# with open(output_file, mode='w', newline='') as file:
-#     writer = csv.writer(file)
-#     # Write header
-#     writer.writerow(['X', 'Y'])
-#     # Write data
-#     for x, y in zip(xVals, yVals):
-#         writer.writerow([x, y])
-#
-# print(f"Coordinates have been saved to {output_file}")
+output_file = 'robot_coordinates_triangle.csv'
+
+# Write to CSV
+with open(output_file, mode='w', newline='') as file:
+    writer = csv.writer(file)
+    # Write header
+    writer.writerow(['X', 'Y'])
+    # Write data
+    for x, y in zip(xVals, yVals):
+        writer.writerow([x, y])
+
+print(f"Coordinates have been saved to {output_file}")
 plt.plot(xVals, yVals)
 
 # Add labels and title
