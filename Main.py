@@ -28,7 +28,7 @@ def packAndSendMsg(P1, P2, P3):
 def GetContinuumRobotControl():
     global xVals, yVals, tik, tok
 
-    freq = 0.5
+    freq = 0.1
     maxP = 100
     print(tok-time.time())
     tok  =  time.time() # get current time
@@ -52,8 +52,13 @@ print("Connected")
 video_0 = cv2.VideoCapture(1)
 
 #specify color HSV bounds
-lower_bound = np.array([10, 0,200])
-upper_bound = np.array([200, 90, 255])
+# lower boundary RED color range values; Hue (0 - 10)
+lower1 = np.array([0, 30, 20])
+upper1 = np.array([20, 255, 255])
+
+# upper boundary RED color range values; Hue (160 - 180)
+lower2 = np.array([160, 30, 20])
+upper2 = np.array([179, 255, 255])
 
 # create empty list which will store our trajectory data
 xVals = []
@@ -70,8 +75,10 @@ while(True): # create our loop
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
     #find color masks
-    mask = cv2.inRange(hsv, lower_bound, upper_bound)
-
+    # mask = cv2.inRange(hsv, lower_bound, upper_bound)
+    lower_mask = cv2.inRange(hsv, lower1, upper1)
+    upper_mask = cv2.inRange(hsv, lower2, upper2)
+    mask = lower_mask + upper_mask
     # define kernel size
     kernel = np.ones((7, 7), np.uint8)
 
@@ -83,8 +90,8 @@ while(True): # create our loop
 
 
 #code to get specific color
-    # x = 100
-    # y = 100
+    # x = 290
+    # y = 290
     # colorsB = frame[y,x,0]
     # colorsG = frame[y,x,1]
     # colorsR = frame[y,x,2]
@@ -95,7 +102,7 @@ while(True): # create our loop
     #
     # # Print the HSV value
     #
-    # frame[x-5:x+5, y-5:y+5] = [0, 255, 0]
+    # frame[x-1:x+1, y-1:y+1] = [0, 255, 0]
 
     #finds contours from colors
     contours, hierarchy = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -129,6 +136,7 @@ while(True): # create our loop
 
     #Show video with contours
     cv2.imshow('Output', output)
+    #cv2.imshow('mask', mask)
 
 
 
