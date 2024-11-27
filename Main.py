@@ -47,8 +47,11 @@ def GetContinuumRobotControl():
     dt = t - prevT
     thetaDesired = (t * 2 * pi * freq) % (2 * pi)
 
-    RadiusDesired = 150
-
+    #RadiusDesired = 150
+    r = 200
+    xDes = r*max(0,min(1, 3/2-abs(thetaDesired*2*pi/4 - 3/2)))-r/2
+    yDes = r * max(0, min(1, 3 / 2 - abs(thetaDesired * 2 * pi / 4 - 5 / 2))) - r / 2
+    RadiusDesired =
     ActualRadius = math.sqrt((xVals[-1]-xCenter)**2 + (yVals[-1]-yCenter)**2)
 
     prevError = error
@@ -76,8 +79,7 @@ def GetContinuumRobotControl():
     #     P1 = (maxP/2) + (maxP/2) *math.cos(thetaDesired*6/4-pi)
     #     P2 = 0
     #     P3 = (maxP/2) + (maxP/2) *math.cos(thetaDesired*6/4)
-    return P1, P2, P3
-
+    return P1, P2, P3, RadiusDesired, thetaDesired
 
 ser = serial.Serial(port= 'COM6', baudrate=9600, timeout=10)  # create Serial Object, baud = 9600, read times out after 10s
 time.sleep(.1)  # delay 3 seconds to allow serial com to get established
@@ -101,6 +103,8 @@ upper2 = np.array([179, 255, 255])
 # create empty list which will store our trajectory data
 xVals = []
 yVals = []
+radVals = []
+thetaVals = []
 
 while(True): # create our loop
 ########################################################################################
@@ -173,14 +177,14 @@ while(True): # create our loop
             xVals.append(C[0, 0].item())
             yVals.append(C[0, 1].item())
             print([xVals[-1], yVals[-1]])
-            P1, P2, P3 = GetContinuumRobotControl()
+            P1, P2, P3, rad, theta= GetContinuumRobotControl()
+            radVals.append(rad)
+            thetaVals.append(theta)
             packAndSendMsg(P1, P2, P3)
 
     #Show video with contours
     cv2.imshow('Output', output)
     #cv2.imshow('mask', mask)
-
-
 
 
     if cv2.waitKey(1) & 0xFF==ord('a'):
@@ -189,7 +193,7 @@ while(True): # create our loop
 video_0.release()
 cv2.destroyAllWindows()
 
-output_file = 'robot_coordinates_PI.csv'
+output_file = 'robot_coordinates_Square.csv'
 
 # Write to CSV
 with open(output_file, mode='w', newline='') as file:
@@ -201,8 +205,10 @@ with open(output_file, mode='w', newline='') as file:
         writer.writerow([x, y])
 
 print(f"Coordinates have been saved to {output_file}")
-plt.plot(xVals, yVals)
-
+meanX = sum(xVals) / len(xVals)
+meanY = sum(yVals) / len(yVals)
+plt.plot(xVals-meanX, yVals-meanY)
+plt.plot(radVals, thetaVals)
 # Add labels and title
 plt.xlabel('x-axis')
 plt.ylabel('y-axis')
