@@ -208,7 +208,8 @@ print(f"Coordinates have been saved to {output_file}")
 meanX = sum(xVals) / len(xVals)
 meanY = sum(yVals) / len(yVals)
 plt.plot(xVals-meanX, yVals-meanY)
-plt.plot(radVals, thetaVals)
+
+plt.plot(radVals*math.cos(thetaVals), radVals*math.sin(thetaVals))
 # Add labels and title
 plt.xlabel('x-axis')
 plt.ylabel('y-axis')
