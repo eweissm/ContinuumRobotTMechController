@@ -51,7 +51,7 @@ def GetContinuumRobotControl():
     r = 200
     xDes = r*max(0,min(1, 3/2-abs(thetaDesired*2*pi/4 - 3/2)))-r/2
     yDes = r * max(0, min(1, 3 / 2 - abs(thetaDesired * 2 * pi / 4 - 5 / 2))) - r / 2
-    RadiusDesired =
+    RadiusDesired = math.sqrt(xDes**2 + yDes**2)
     ActualRadius = math.sqrt((xVals[-1]-xCenter)**2 + (yVals[-1]-yCenter)**2)
 
     prevError = error
