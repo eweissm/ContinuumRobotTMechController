@@ -27,17 +27,32 @@ def packAndSendMsg(P1, P2, P3):
     msg = msg + 'Z'  # add end of message indicator
     ser.write(bytes(str(msg), 'UTF-8'))
 
+global error, prevError, errorIntegral, t
+errorIntegral=0
+prevError = 0
+error = 0
+t=0
+
 def GetContinuumRobotControl():
-    global xVals, yVals, tik, tok
+    global xVals, yVals, tik, tok, errorIntegral, prevError,error,t
     xCenter = 250
     yCenter = 250
     RadiusDesired = 150
 
     ActualRadius = math.sqrt((xVals[-1]-xCenter)**2 + (yVals[-1]-yCenter)**2)
 
+    prevT = t
+    tok = time.time()  # get current time
+    t = tok - tik  # time elapsed since start of program
+    dt = t-prevT
+
+    prevError = error
     error = RadiusDesired - ActualRadius
 
+    errorIntegral = errorIntegral + dt *(1/2)*(prevError+error) # using trapezoidal integration
+
     kp = .1
+    ki = .01
 
     freq = 0.1
     maxP = 100
@@ -47,9 +62,9 @@ def GetContinuumRobotControl():
     pi = 3.14159
     thetaDesired = (t * 2 * pi * freq) % (2 * pi)
 
-    P1 = min(maxP, int(maxP / 2. + (maxP / 2.) * math.sin(thetaDesired ) + kp*error* math.sin(thetaDesired)  ))
-    P2 = min(maxP, int(maxP / 2. + (maxP / 2.) * math.sin(thetaDesired + 120.0 * pi / 180.) + kp*error* math.sin(thetaDesired + 120.0 * pi / 180.)))
-    P3 = min(maxP, int(maxP / 2. + (maxP / 2.) * math.sin( thetaDesired + 240.0 * pi / 180.)+ kp*error* math.sin(thetaDesired + 240.0 * pi / 180.)))
+    P1 = min(maxP, int(maxP / 2. + (maxP / 2.) * math.sin(thetaDesired ) + (kp*error + errorIntegral*ki)* math.sin(thetaDesired)  ))
+    P2 = min(maxP, int(maxP / 2. + (maxP / 2.) * math.sin(thetaDesired + 120.0 * pi / 180.) + (kp*error + errorIntegral*ki)* math.sin(thetaDesired + 120.0 * pi / 180.)))
+    P3 = min(maxP, int(maxP / 2. + (maxP / 2.) * math.sin( thetaDesired + 240.0 * pi / 180.)+ (kp*error + errorIntegral*ki)* math.sin(thetaDesired + 240.0 * pi / 180.)))
 
 
     # if thetaDesired>=0 and thetaDesired<= (2*pi/3):
