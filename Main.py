@@ -37,14 +37,19 @@ def GetContinuumRobotControl():
     global xVals, yVals, tik, tok, errorIntegral, prevError,error,t
     xCenter = 250
     yCenter = 250
-    RadiusDesired = 150
-
-    ActualRadius = math.sqrt((xVals[-1]-xCenter)**2 + (yVals[-1]-yCenter)**2)
+    freq = 0.1
+    maxP = 100
+    pi = 3.14159
 
     prevT = t
     tok = time.time()  # get current time
     t = tok - tik  # time elapsed since start of program
-    dt = t-prevT
+    dt = t - prevT
+    thetaDesired = (t * 2 * pi * freq) % (2 * pi)
+
+    RadiusDesired = 150
+
+    ActualRadius = math.sqrt((xVals[-1]-xCenter)**2 + (yVals[-1]-yCenter)**2)
 
     prevError = error
     error = RadiusDesired - ActualRadius
@@ -53,14 +58,6 @@ def GetContinuumRobotControl():
 
     kp = .1
     ki = .01
-
-    freq = 0.1
-    maxP = 100
-    #print(tok-time.time())
-    tok  =  time.time() # get current time
-    t = tok-tik # time elapsed since start of program
-    pi = 3.14159
-    thetaDesired = (t * 2 * pi * freq) % (2 * pi)
 
     P1 = min(maxP, int(maxP / 2. + (maxP / 2.) * math.sin(thetaDesired ) + (kp*error + errorIntegral*ki)* math.sin(thetaDesired)  ))
     P2 = min(maxP, int(maxP / 2. + (maxP / 2.) * math.sin(thetaDesired + 120.0 * pi / 180.) + (kp*error + errorIntegral*ki)* math.sin(thetaDesired + 120.0 * pi / 180.)))
@@ -192,7 +189,7 @@ while(True): # create our loop
 video_0.release()
 cv2.destroyAllWindows()
 
-output_file = 'robot_coordinates_triangle.csv'
+output_file = 'robot_coordinates_PI.csv'
 
 # Write to CSV
 with open(output_file, mode='w', newline='') as file:
