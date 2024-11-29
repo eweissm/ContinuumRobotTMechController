@@ -207,9 +207,26 @@ with open(output_file, mode='w', newline='') as file:
 print(f"Coordinates have been saved to {output_file}")
 meanX = sum(xVals) / len(xVals)
 meanY = sum(yVals) / len(yVals)
-plt.plot(xVals-meanX, yVals-meanY)
+print("Mean X,Y:"+str(meanX) +" "+str(meanY) )
 
-plt.plot(radVals*math.cos(thetaVals), radVals*math.sin(thetaVals))
+
+
+desX = []
+desY = []
+actualX = []
+actualY = []
+
+
+for i in range(len(thetaVals)):
+    desX.append(radVals[i]*math.cos(thetaVals[i]))
+    desY.append(radVals[i] * math.sin(thetaVals[i]))
+    actualX.append(xVals[i]-meanX)
+    actualY.append(yVals[i] - meanY)
+
+
+plt.plot(actualX, actualY, color='r')
+
+plt.plot(desX, desY, color='g')
 # Add labels and title
 plt.xlabel('x-axis')
 plt.ylabel('y-axis')
