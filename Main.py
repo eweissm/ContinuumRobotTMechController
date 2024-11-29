@@ -27,16 +27,17 @@ def packAndSendMsg(P1, P2, P3):
     msg = msg + 'Z'  # add end of message indicator
     ser.write(bytes(str(msg), 'UTF-8'))
 
-global error, prevError, errorIntegral, t
+global error, prevError, errorIntegral, t, xCenter, yCenter
 errorIntegral=0
 prevError = 0
 error = 0
 t=0
+xCenter = 318
+yCenter = 241
 
 def GetContinuumRobotControl():
-    global xVals, yVals, tik, tok, errorIntegral, prevError,error,t
-    xCenter = 318
-    yCenter = 241
+    global xVals, yVals, tik, tok, errorIntegral, prevError,error,t, xCenter, yCenter
+
     freq = 0.025
     maxP = 100
     pi = 3.14159
@@ -45,14 +46,15 @@ def GetContinuumRobotControl():
     tok = time.time()  # get current time
     t = tok - tik  # time elapsed since start of program
     dt = t - prevT
+
+    #for circular path
     #thetaDesired = (t * 2 * pi * freq) % (2 * pi)
-
     #RadiusDesired = 150
-    r = 100
-    # xDes = r*max(0,min(1, 3/2-abs(thetaDesired*2*pi/4 - 3/2)))-r/2
-    # yDes = r * max(0, min(1, 3 / 2 - abs(thetaDesired * 2 * pi / 4 - 5 / 2))) - r / 2
-    # RadiusDesired = math.sqrt(xDes**2 + yDes**2)
 
+
+    r = 100
+
+    # calculate actual radius from robot's starting point
     ActualRadius = math.sqrt((xVals[-1]-xCenter)**2 + (yVals[-1]-yCenter)**2)
 
     cycleT = t%(1/freq)
@@ -79,27 +81,30 @@ def GetContinuumRobotControl():
     kp = .1
     ki = .5
 
-    P1 =  int(maxP / 2. +  math.sin(thetaDesired ) * ((maxP / 2.) + kp*error + errorIntegral*ki))
-    P2 =  int(maxP / 2. +  math.sin(thetaDesired + 120.0 * pi / 180.) * ( (maxP / 2.) + kp*error + errorIntegral*ki))
-    P3 = int(maxP / 2. +  math.sin( thetaDesired + 240.0 * pi / 180.)* ((maxP / 2.) + kp*error + errorIntegral*ki))
+    if thetaDesired>=0 and thetaDesired<= (2*pi/3):
+        P1 = (maxP/2) + math.cos(thetaDesired*6/4)*(maxP/2+ kp*error + errorIntegral*ki)
+        P2 = (maxP/2) + math.cos(thetaDesired*6/4-pi)*(maxP/2+ kp*error + errorIntegral*ki)
+        P3 = 0
+    elif thetaDesired>(2*pi/3) and thetaDesired<= (4*pi/3):
+        P1 = 0
+        P2 = (maxP/2) + math.cos(thetaDesired*6/4-pi)*(maxP/2+ kp*error + errorIntegral*ki)
+        P3 = (maxP/2) + math.cos(thetaDesired*6/4)*(maxP/2+ kp*error + errorIntegral*ki)
+    else:
+        P1 = (maxP/2) +math.cos(thetaDesired*6/4-pi)*(maxP/2+ kp*error + errorIntegral*ki)
+        P2 = 0
+        P3 = (maxP/2) + math.cos(thetaDesired*6/4)*(maxP/2+ kp*error + errorIntegral*ki)
+
+
+    # P1 =  int(maxP / 2. +  math.sin(thetaDesired ) * ((maxP / 2.) + kp*error + errorIntegral*ki))
+    # P2 =  int(maxP / 2. +  math.sin(thetaDesired + 120.0 * pi / 180.) * ( (maxP / 2.) + kp*error + errorIntegral*ki))
+    # P3 = int(maxP / 2. +  math.sin( thetaDesired + 240.0 * pi / 180.)* ((maxP / 2.) + kp*error + errorIntegral*ki))
 
     # force P to be bounded
-    P1 = max(0,min(P1, maxP))
-    P2 = max(0, min(P2, maxP))
-    P3 = max(0, min(P3, maxP))
+    P1 = int(max(0,min(P1, maxP)))
+    P2 = int(max(0, min(P2, maxP)))
+    P3 = int(max(0, min(P3, maxP)))
 
-    # if thetaDesired>=0 and thetaDesired<= (2*pi/3):
-    #     P1 = (maxP/2) + (maxP/2) *math.cos(thetaDesired*6/4)
-    #     P2 = (maxP/2) + (maxP/2) *math.cos(thetaDesired*6/4-pi)
-    #     P3 = 0
-    # elif thetaDesired>(2*pi/3) and thetaDesired<= (4*pi/3):
-    #     P1 = 0
-    #     P2 = (maxP/2) + (maxP/2) *math.cos(thetaDesired*6/4-pi)
-    #     P3 = (maxP/2) + (maxP/2) *math.cos(thetaDesired*6/4)
-    # else:
-    #     P1 = (maxP/2) + (maxP/2) *math.cos(thetaDesired*6/4-pi)
-    #     P2 = 0
-    #     P3 = (maxP/2) + (maxP/2) *math.cos(thetaDesired*6/4)
+
     return P1, P2, P3, RadiusDesired, thetaDesired
 
 ser = serial.Serial(port= 'COM6', baudrate=9600, timeout=10)  # create Serial Object, baud = 9600, read times out after 10s
@@ -241,19 +246,15 @@ print("Mean X,Y:"+str(meanX) +" "+str(meanY) )
 
 desX = []
 desY = []
-actualX = []
-actualY = []
 
 for i in range(len(thetaVals)):
-    desX.append(radVals[i]*math.cos(thetaVals[i]))
-    desY.append(radVals[i] * math.sin(thetaVals[i]))
-    actualX.append(xVals[i]-meanX)
-    actualY.append(yVals[i] - meanY)
+    desX.append(radVals[i]*math.cos(thetaVals[i]) + xCenter)
+    desY.append(radVals[i] * math.sin(thetaVals[i]) + yCenter)
 
 
 fig, (ax1,ax2) = plt.subplots(1,2)
 
-ax1.plot(actualX, actualY, color='r')
+ax1.plot(xVals, yVals, color='r')
 
 ax1.plot(desX, desY, color='g')
 
