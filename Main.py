@@ -35,9 +35,9 @@ t=0
 
 def GetContinuumRobotControl():
     global xVals, yVals, tik, tok, errorIntegral, prevError,error,t
-    xCenter = 314
-    yCenter = 238
-    freq = 0.01
+    xCenter = 318
+    yCenter = 241
+    freq = 0.025
     maxP = 100
     pi = 3.14159
 
@@ -77,12 +77,16 @@ def GetContinuumRobotControl():
     errorIntegral = errorIntegral + dt *(1/2)*(prevError+error) # using trapezoidal integration
 
     kp = .1
-    ki = .2
+    ki = .5
 
-    P1 = min(maxP, int(maxP / 2. + (maxP / 2.) * math.sin(thetaDesired ) + (kp*error + errorIntegral*ki)* math.sin(thetaDesired)  ))
-    P2 = min(maxP, int(maxP / 2. + (maxP / 2.) * math.sin(thetaDesired + 120.0 * pi / 180.) + (kp*error + errorIntegral*ki)* math.sin(thetaDesired + 120.0 * pi / 180.)))
-    P3 = min(maxP, int(maxP / 2. + (maxP / 2.) * math.sin( thetaDesired + 240.0 * pi / 180.)+ (kp*error + errorIntegral*ki)* math.sin(thetaDesired + 240.0 * pi / 180.)))
+    P1 =  int(maxP / 2. +  math.sin(thetaDesired ) * ((maxP / 2.) + kp*error + errorIntegral*ki))
+    P2 =  int(maxP / 2. +  math.sin(thetaDesired + 120.0 * pi / 180.) * ( (maxP / 2.) + kp*error + errorIntegral*ki))
+    P3 = int(maxP / 2. +  math.sin( thetaDesired + 240.0 * pi / 180.)* ((maxP / 2.) + kp*error + errorIntegral*ki))
 
+    # force P to be bounded
+    P1 = max(0,min(P1, maxP))
+    P2 = max(0, min(P2, maxP))
+    P3 = max(0, min(P3, maxP))
 
     # if thetaDesired>=0 and thetaDesired<= (2*pi/3):
     #     P1 = (maxP/2) + (maxP/2) *math.cos(thetaDesired*6/4)
@@ -254,8 +258,8 @@ ax1.plot(actualX, actualY, color='r')
 ax1.plot(desX, desY, color='g')
 
 ax2.plot(P1Vals)
-ax2.plot(P1Vals)
-ax2.plot(P1Vals)
+ax2.plot(P2Vals)
+ax2.plot(P3Vals)
 
 # Display the plot
 plt.show()
