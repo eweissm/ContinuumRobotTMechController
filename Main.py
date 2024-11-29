@@ -38,7 +38,7 @@ yCenter = 314
 def GetContinuumRobotControl():
     global xVals, yVals, tik, tok, errorIntegral, prevError,error,t, xCenter, yCenter
 
-    freq = 0.025
+    freq = 0.015
     maxP = 100
     pi = 3.14159
 
@@ -56,7 +56,7 @@ def GetContinuumRobotControl():
 
     # calculate actual radius from robot's starting point
     ActualRadius = math.sqrt((xVals[-1]-xCenter)**2 + (yVals[-1]-yCenter)**2)
-
+    ActualTheta = math.atan2(yVals[-1],xVals[-1])
     # cycleT = t%(1/freq)
     # if cycleT >=0 and cycleT <=(1/freq)*.25:
     #     xDes = r
@@ -88,15 +88,17 @@ def GetContinuumRobotControl():
     yDes = yDes*r
 
     RadiusDesired = math.sqrt(xDes ** 2 + yDes ** 2)
-    #thetaDesired = math.atan2(yDes, xDes)
+    thetaDesired = math.atan2(yDes, xDes)
+
+    thetaError = thetaDesired-pi/4 - ActualTheta
     prevError = error
     error = RadiusDesired - ActualRadius
-    print(error)
+    print([error,thetaError])
     errorIntegral = errorIntegral + dt *(1/2)*(prevError+error) # using trapezoidal integration
 
     kp = .1
-    ki = .5
-    #
+    ki = .8
+
     # if thetaDesired>=0-pi and thetaDesired<= (2*pi/3)-pi:
     #     P1 = (maxP/2) + math.cos(thetaDesired*6/4)*(maxP/2+ kp*error + errorIntegral*ki)
     #     P2 = (maxP/2) + math.cos(thetaDesired*6/4-pi)*(maxP/2+ kp*error + errorIntegral*ki)
@@ -111,9 +113,9 @@ def GetContinuumRobotControl():
     #     P3 = (maxP/2) + math.cos(thetaDesired*6/4)*(maxP/2+ kp*error + errorIntegral*ki)
 
 
-    P1 =  int(maxP / 2. +  math.sin(thetaDesired ) * ((maxP / 2.) + kp*error + errorIntegral*ki))
-    P2 =  int(maxP / 2. +  math.sin(thetaDesired + 120.0 * pi / 180.) * ( (maxP / 2.) + kp*error + errorIntegral*ki))
-    P3 = int(maxP / 2. +  math.sin( thetaDesired + 240.0 * pi / 180.)* ((maxP / 2.) + kp*error + errorIntegral*ki))
+    P1 =  int(maxP / 2. +  math.sin(thetaDesired  - pi/4) * ((maxP / 2.) + kp*error + errorIntegral*ki))
+    P2 =  int(maxP / 2. +  math.sin(thetaDesired + 120.0 * pi / 180 -pi/4.) * ( (maxP / 2.) + kp*error + errorIntegral*ki))
+    P3 = int(maxP / 2. +  math.sin( thetaDesired + 240.0 * pi / 180.-pi/4 )* ((maxP / 2.) + kp*error + errorIntegral*ki))
 
     # force P to be bounded
     P1 = int(max(0,min(P1, maxP)))
@@ -121,7 +123,7 @@ def GetContinuumRobotControl():
     P3 = int(max(0, min(P3, maxP)))
 
 
-    return P1, P2, P3, RadiusDesired, thetaDesired
+    return P1, P2, P3, RadiusDesired, thetaDesired, ActualTheta, ActualRadius
 
 ser = serial.Serial(port= 'COM6', baudrate=9600, timeout=10)  # create Serial Object, baud = 9600, read times out after 10s
 time.sleep(.1)  # delay 3 seconds to allow serial com to get established
@@ -222,10 +224,10 @@ while(True): # create our loop
             xVals.append(C[0, 1].item())
             yVals.append(C[0, 0].item())
             #print([xVals[-1], yVals[-1]])
-            P1, P2, P3, rad, theta= GetContinuumRobotControl()
+            P1, P2, P3, rad_des, theta_des, thetaAct, RadAct= GetContinuumRobotControl()
 
-            radVals.append(rad)
-            thetaVals.append(theta)
+            radVals.append(rad_des)
+            thetaVals.append(theta_des)
             P1Vals.append(P1)
             P2Vals.append(P2)
             P3Vals.append(P3)
@@ -234,7 +236,13 @@ while(True): # create our loop
             #print([radVals[-1], thetaVals[-1]])
             x =int(radVals[-1]*math.cos(thetaVals[-1]) + xCenter)
             y =int(radVals[-1] * math.sin(thetaVals[-1]) + yCenter)
+
             frame[x - 3:x + 3, y - 3:y + 3] = [0, 255, 0]
+
+            x = int(RadAct * math.cos(thetaAct) + xCenter)
+            y = int(RadAct * math.sin(thetaAct) + yCenter)
+
+            frame[x - 3:x + 3, y - 3:y + 3] = [0, 0, 255]
 
     #Show video with contours
     cv2.imshow('Output', output)
