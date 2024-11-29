@@ -56,7 +56,7 @@ def GetContinuumRobotControl():
 
     # calculate actual radius from robot's starting point
     ActualRadius = math.sqrt((xVals[-1]-xCenter)**2 + (yVals[-1]-yCenter)**2)
-    ActualTheta = math.atan2(yVals[-1],xVals[-1])
+    ActualTheta = math.atan2(yVals[-1]-yCenter,xVals[-1]-xCenter)
     # cycleT = t%(1/freq)
     # if cycleT >=0 and cycleT <=(1/freq)*.25:
     #     xDes = r
@@ -90,7 +90,7 @@ def GetContinuumRobotControl():
     RadiusDesired = math.sqrt(xDes ** 2 + yDes ** 2)
     thetaDesired = math.atan2(yDes, xDes)
 
-    thetaError = thetaDesired-pi/4 - ActualTheta
+    thetaError = thetaDesired - ActualTheta
     prevError = error
     error = RadiusDesired - ActualRadius
     print([error,thetaError])
@@ -98,6 +98,7 @@ def GetContinuumRobotControl():
 
     kp = .1
     ki = .8
+    kp_theta=2
 
     # if thetaDesired>=0-pi and thetaDesired<= (2*pi/3)-pi:
     #     P1 = (maxP/2) + math.cos(thetaDesired*6/4)*(maxP/2+ kp*error + errorIntegral*ki)
@@ -242,7 +243,7 @@ while(True): # create our loop
             x = int(RadAct * math.cos(thetaAct) + xCenter)
             y = int(RadAct * math.sin(thetaAct) + yCenter)
 
-            frame[x - 3:x + 3, y - 3:y + 3] = [0, 0, 255]
+            frame[x - 3:x + 3, y - 3:y + 3] = [255, 0, 0]
 
     #Show video with contours
     cv2.imshow('Output', output)
