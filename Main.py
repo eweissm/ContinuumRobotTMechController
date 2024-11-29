@@ -32,8 +32,8 @@ errorIntegral=0
 prevError = 0
 error = 0
 t=0
-xCenter = 318
-yCenter = 241
+xCenter = 246
+yCenter = 314
 
 def GetContinuumRobotControl():
     global xVals, yVals, tik, tok, errorIntegral, prevError,error,t, xCenter, yCenter
@@ -91,7 +91,7 @@ def GetContinuumRobotControl():
     #thetaDesired = math.atan2(yDes, xDes)
     prevError = error
     error = RadiusDesired - ActualRadius
-
+    print(error)
     errorIntegral = errorIntegral + dt *(1/2)*(prevError+error) # using trapezoidal integration
 
     kp = .1
@@ -219,8 +219,8 @@ while(True): # create our loop
             cv2.line(output, (C[0,0],C[0,1]),(C[1,0],C[1,1]), (255, 0, 0), 2)
         else:
 
-            xVals.append(C[0, 0].item())
-            yVals.append(C[0, 1].item())
+            xVals.append(C[0, 1].item())
+            yVals.append(C[0, 0].item())
             #print([xVals[-1], yVals[-1]])
             P1, P2, P3, rad, theta= GetContinuumRobotControl()
 
@@ -231,7 +231,7 @@ while(True): # create our loop
             P3Vals.append(P3)
 
             packAndSendMsg(P1, P2, P3)
-            print([radVals[-1], thetaVals[-1]])
+            #print([radVals[-1], thetaVals[-1]])
             x =int(radVals[-1]*math.cos(thetaVals[-1]) + xCenter)
             y =int(radVals[-1] * math.sin(thetaVals[-1]) + yCenter)
             frame[x - 3:x + 3, y - 3:y + 3] = [0, 255, 0]
