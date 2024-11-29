@@ -27,16 +27,21 @@ def packAndSendMsg(P1, P2, P3):
     msg = msg + 'Z'  # add end of message indicator
     ser.write(bytes(str(msg), 'UTF-8'))
 
-global error, prevError, errorIntegral, t, xCenter, yCenter
+global error, prevError, errorIntegral, t, xCenter, yCenter,errorTheta,prevErrorTheta,errorIntegralTheta
 errorIntegral=0
 prevError = 0
 error = 0
+
+errorIntegralTheta=0
+prevErrorTheta = 0
+errorTheta = 0
+
 t=0
 xCenter = 246
 yCenter = 314
 
 def GetContinuumRobotControl():
-    global xVals, yVals, tik, tok, errorIntegral, prevError,error,t, xCenter, yCenter
+    global xVals, yVals, tik, tok, errorIntegral, prevError,error,t, xCenter, yCenter,errorIntegralTheta, prevErrorTheta,errorTheta
 
     freq = 0.015
     maxP = 100
@@ -88,18 +93,25 @@ def GetContinuumRobotControl():
     yDes = yDes*r
 
     RadiusDesired = math.sqrt(xDes ** 2 + yDes ** 2)
-    thetaDesired = math.atan2(yDes, xDes)
+    thetaDesired = math.atan2(yDes, xDes)+pi
 
-    thetaError = thetaDesired - ActualTheta
+    if thetaDesired >pi:
+        thetaDesired = -pi+(thetaDesired-pi)
+
+
+    prevErrorTheta = errorTheta
+    errorTheta = thetaDesired - ActualTheta
+    errorIntegralTheta = errorIntegralTheta + dt * (1 / 2) * (prevErrorTheta + errorTheta)  # using trapezoidal integration
+
     prevError = error
     error = RadiusDesired - ActualRadius
-    print([error,thetaError])
+    print([error,errorTheta,thetaDesired,ActualTheta])
     errorIntegral = errorIntegral + dt *(1/2)*(prevError+error) # using trapezoidal integration
 
     kp = .1
     ki = .8
-    kp_theta=2
-
+    kp_theta=.2
+    ki_theta = .1
     # if thetaDesired>=0-pi and thetaDesired<= (2*pi/3)-pi:
     #     P1 = (maxP/2) + math.cos(thetaDesired*6/4)*(maxP/2+ kp*error + errorIntegral*ki)
     #     P2 = (maxP/2) + math.cos(thetaDesired*6/4-pi)*(maxP/2+ kp*error + errorIntegral*ki)
@@ -114,9 +126,9 @@ def GetContinuumRobotControl():
     #     P3 = (maxP/2) + math.cos(thetaDesired*6/4)*(maxP/2+ kp*error + errorIntegral*ki)
 
 
-    P1 =  int(maxP / 2. +  math.sin(thetaDesired  - pi/4) * ((maxP / 2.) + kp*error + errorIntegral*ki))
-    P2 =  int(maxP / 2. +  math.sin(thetaDesired + 120.0 * pi / 180 -pi/4.) * ( (maxP / 2.) + kp*error + errorIntegral*ki))
-    P3 = int(maxP / 2. +  math.sin( thetaDesired + 240.0 * pi / 180.-pi/4 )* ((maxP / 2.) + kp*error + errorIntegral*ki))
+    P1 =  int(maxP / 2. +  math.sin(thetaDesired  + kp_theta*errorTheta+ki_theta*errorIntegralTheta) * ((maxP / 2.) + kp*error + errorIntegral*ki))
+    P2 =  int(maxP / 2. +  math.sin(thetaDesired + 120.0 * pi / 180 + kp_theta*errorTheta+ki_theta*errorIntegralTheta) * ( (maxP / 2.) + kp*error + errorIntegral*ki))
+    P3 = int(maxP / 2. +  math.sin( thetaDesired + 240.0 * pi / 180 + kp_theta*errorTheta+ki_theta*errorIntegralTheta)* ((maxP / 2.) + kp*error + errorIntegral*ki))
 
     # force P to be bounded
     P1 = int(max(0,min(P1, maxP)))
