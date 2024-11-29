@@ -48,7 +48,7 @@ def GetContinuumRobotControl():
     dt = t - prevT
 
     #for circular path
-    #thetaDesired = (t * 2 * pi * freq) % (2 * pi)
+    thetaDesired = ((t * 2 * pi * freq) % (2 * pi))-pi/4
     #RadiusDesired = 150
 
 
@@ -57,22 +57,36 @@ def GetContinuumRobotControl():
     # calculate actual radius from robot's starting point
     ActualRadius = math.sqrt((xVals[-1]-xCenter)**2 + (yVals[-1]-yCenter)**2)
 
-    cycleT = t%(1/freq)
-    if cycleT >=0 and cycleT <=(1/freq)*.25:
-        xDes = r
-        yDes = -r + cycleT*2*r/(.25/freq)
-    elif cycleT >(1/freq)*.25 and cycleT <=(1/freq)*.5:
-        xDes = r - (cycleT-.25/freq)*2*r/(.25/freq)
-        yDes =r
-    elif cycleT > (1 / freq) * .5 and cycleT <= (1 / freq) * .75:
-        xDes = -r
-        yDes =r - (cycleT-.5/freq)*2*r/(.25/freq)
+    # cycleT = t%(1/freq)
+    # if cycleT >=0 and cycleT <=(1/freq)*.25:
+    #     xDes = r
+    #     yDes = -r + cycleT*2*r/(.25/freq)
+    # elif cycleT >(1/freq)*.25 and cycleT <=(1/freq)*.5:
+    #     xDes = r - (cycleT-.25/freq)*2*r/(.25/freq)
+    #     yDes =r
+    # elif cycleT > (1 / freq) * .5 and cycleT <= (1 / freq) * .75:
+    #     xDes = -r
+    #     yDes =r - (cycleT-.5/freq)*2*r/(.25/freq)
+    # else:
+    #     xDes = -r + (cycleT-.75/freq)*2*r/(.25/freq)
+    #     yDes = -r
+
+    if (thetaDesired>= -pi/4 and thetaDesired<=pi/4):
+        xDes= 1
+        yDes= math.tan(thetaDesired)
+    elif(thetaDesired> pi/4 and thetaDesired<= 3*pi/4):
+        xDes =math.cot(thetaDesired)
+        yDes =1
+    elif (thetaDesired > 3*pi / 4 and thetaDesired <= 5 * pi / 4):
+        xDes =-1
+        yDes = -math.tan(thetaDesired)
     else:
-        xDes = -r + (cycleT-.75/freq)*2*r/(.25/freq)
-        yDes = -r
+        xDes =-math.cot(thetaDesired)
+        yDes =-1
+
 
     RadiusDesired = math.sqrt(xDes ** 2 + yDes ** 2)
-    thetaDesired = math.atan2(yDes, xDes)
+    #thetaDesired = math.atan2(yDes, xDes)
     prevError = error
     error = RadiusDesired - ActualRadius
 
@@ -80,24 +94,24 @@ def GetContinuumRobotControl():
 
     kp = .1
     ki = .5
+    #
+    # if thetaDesired>=0-pi and thetaDesired<= (2*pi/3)-pi:
+    #     P1 = (maxP/2) + math.cos(thetaDesired*6/4)*(maxP/2+ kp*error + errorIntegral*ki)
+    #     P2 = (maxP/2) + math.cos(thetaDesired*6/4-pi)*(maxP/2+ kp*error + errorIntegral*ki)
+    #     P3 = 0
+    # elif thetaDesired>(2*pi/3)-pi and thetaDesired<= (4*pi/3)-pi:
+    #     P1 = 0
+    #     P2 = (maxP/2) + math.cos(thetaDesired*6/4-pi)*(maxP/2+ kp*error + errorIntegral*ki)
+    #     P3 = (maxP/2) + math.cos(thetaDesired*6/4)*(maxP/2+ kp*error + errorIntegral*ki)
+    # else:
+    #     P1 = (maxP/2) +math.cos(thetaDesired*6/4-pi)*(maxP/2+ kp*error + errorIntegral*ki)
+    #     P2 = 0
+    #     P3 = (maxP/2) + math.cos(thetaDesired*6/4)*(maxP/2+ kp*error + errorIntegral*ki)
 
-    if thetaDesired>=0 and thetaDesired<= (2*pi/3):
-        P1 = (maxP/2) + math.cos(thetaDesired*6/4)*(maxP/2+ kp*error + errorIntegral*ki)
-        P2 = (maxP/2) + math.cos(thetaDesired*6/4-pi)*(maxP/2+ kp*error + errorIntegral*ki)
-        P3 = 0
-    elif thetaDesired>(2*pi/3) and thetaDesired<= (4*pi/3):
-        P1 = 0
-        P2 = (maxP/2) + math.cos(thetaDesired*6/4-pi)*(maxP/2+ kp*error + errorIntegral*ki)
-        P3 = (maxP/2) + math.cos(thetaDesired*6/4)*(maxP/2+ kp*error + errorIntegral*ki)
-    else:
-        P1 = (maxP/2) +math.cos(thetaDesired*6/4-pi)*(maxP/2+ kp*error + errorIntegral*ki)
-        P2 = 0
-        P3 = (maxP/2) + math.cos(thetaDesired*6/4)*(maxP/2+ kp*error + errorIntegral*ki)
 
-
-    # P1 =  int(maxP / 2. +  math.sin(thetaDesired ) * ((maxP / 2.) + kp*error + errorIntegral*ki))
-    # P2 =  int(maxP / 2. +  math.sin(thetaDesired + 120.0 * pi / 180.) * ( (maxP / 2.) + kp*error + errorIntegral*ki))
-    # P3 = int(maxP / 2. +  math.sin( thetaDesired + 240.0 * pi / 180.)* ((maxP / 2.) + kp*error + errorIntegral*ki))
+    P1 =  int(maxP / 2. +  math.sin(thetaDesired ) * ((maxP / 2.) + kp*error + errorIntegral*ki))
+    P2 =  int(maxP / 2. +  math.sin(thetaDesired + 120.0 * pi / 180.) * ( (maxP / 2.) + kp*error + errorIntegral*ki))
+    P3 = int(maxP / 2. +  math.sin( thetaDesired + 240.0 * pi / 180.)* ((maxP / 2.) + kp*error + errorIntegral*ki))
 
     # force P to be bounded
     P1 = int(max(0,min(P1, maxP)))
@@ -216,6 +230,9 @@ while(True): # create our loop
 
             packAndSendMsg(P1, P2, P3)
 
+            x =int(radVals[-1]*math.cos(thetaVals[-1]) + xCenter)
+            y =int(radVals[-1] * math.sin(thetaVals[-1]) + yCenter)
+            frame[x - 3:x + 3, y - 3:y + 3] = [0, 255, 0]
 
     #Show video with contours
     cv2.imshow('Output', output)
