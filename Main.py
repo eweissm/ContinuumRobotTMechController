@@ -75,15 +75,17 @@ def GetContinuumRobotControl():
         xDes= 1
         yDes= math.tan(thetaDesired)
     elif(thetaDesired> pi/4 and thetaDesired<= 3*pi/4):
-        xDes =math.cot(thetaDesired)
+        xDes =1/math.tan(thetaDesired)
         yDes =1
     elif (thetaDesired > 3*pi / 4 and thetaDesired <= 5 * pi / 4):
         xDes =-1
         yDes = -math.tan(thetaDesired)
     else:
-        xDes =-math.cot(thetaDesired)
+        xDes =-1/math.tan(thetaDesired)
         yDes =-1
 
+    xDes = xDes*r
+    yDes = yDes*r
 
     RadiusDesired = math.sqrt(xDes ** 2 + yDes ** 2)
     #thetaDesired = math.atan2(yDes, xDes)
@@ -219,7 +221,7 @@ while(True): # create our loop
 
             xVals.append(C[0, 0].item())
             yVals.append(C[0, 1].item())
-            print([xVals[-1], yVals[-1]])
+            #print([xVals[-1], yVals[-1]])
             P1, P2, P3, rad, theta= GetContinuumRobotControl()
 
             radVals.append(rad)
@@ -229,7 +231,7 @@ while(True): # create our loop
             P3Vals.append(P3)
 
             packAndSendMsg(P1, P2, P3)
-
+            print([radVals[-1], thetaVals[-1]])
             x =int(radVals[-1]*math.cos(thetaVals[-1]) + xCenter)
             y =int(radVals[-1] * math.sin(thetaVals[-1]) + yCenter)
             frame[x - 3:x + 3, y - 3:y + 3] = [0, 255, 0]
