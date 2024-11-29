@@ -101,6 +101,11 @@ def GetContinuumRobotControl():
 
     prevErrorTheta = errorTheta
     errorTheta = thetaDesired - ActualTheta
+    if errorTheta >pi:
+        errorTheta = errorTheta- 2*pi
+    if errorTheta < -pi:
+        errorTheta = errorTheta+2*pi
+
     errorIntegralTheta = errorIntegralTheta + dt * (1 / 2) * (prevErrorTheta + errorTheta)  # using trapezoidal integration
 
     prevError = error
@@ -111,7 +116,7 @@ def GetContinuumRobotControl():
     kp = .1
     ki = .8
     kp_theta=.2
-    ki_theta = .1
+    ki_theta = .4
     # if thetaDesired>=0-pi and thetaDesired<= (2*pi/3)-pi:
     #     P1 = (maxP/2) + math.cos(thetaDesired*6/4)*(maxP/2+ kp*error + errorIntegral*ki)
     #     P2 = (maxP/2) + math.cos(thetaDesired*6/4-pi)*(maxP/2+ kp*error + errorIntegral*ki)
@@ -125,16 +130,14 @@ def GetContinuumRobotControl():
     #     P2 = 0
     #     P3 = (maxP/2) + math.cos(thetaDesired*6/4)*(maxP/2+ kp*error + errorIntegral*ki)
 
-
-    P1 =  int(maxP / 2. +  math.sin(thetaDesired  + kp_theta*errorTheta+ki_theta*errorIntegralTheta) * ((maxP / 2.) + kp*error + errorIntegral*ki))
-    P2 =  int(maxP / 2. +  math.sin(thetaDesired + 120.0 * pi / 180 + kp_theta*errorTheta+ki_theta*errorIntegralTheta) * ( (maxP / 2.) + kp*error + errorIntegral*ki))
+    P1 = int(maxP / 2. +  math.sin(thetaDesired  + kp_theta*errorTheta+ki_theta*errorIntegralTheta) * ((maxP / 2.) + kp*error + errorIntegral*ki))
+    P2 = int(maxP / 2. +  math.sin(thetaDesired + 120.0 * pi / 180 + kp_theta*errorTheta+ki_theta*errorIntegralTheta) * ( (maxP / 2.) + kp*error + errorIntegral*ki))
     P3 = int(maxP / 2. +  math.sin( thetaDesired + 240.0 * pi / 180 + kp_theta*errorTheta+ki_theta*errorIntegralTheta)* ((maxP / 2.) + kp*error + errorIntegral*ki))
 
     # force P to be bounded
     P1 = int(max(0,min(P1, maxP)))
     P2 = int(max(0, min(P2, maxP)))
     P3 = int(max(0, min(P3, maxP)))
-
 
     return P1, P2, P3, RadiusDesired, thetaDesired, ActualTheta, ActualRadius
 
