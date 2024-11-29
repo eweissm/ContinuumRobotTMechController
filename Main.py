@@ -35,9 +35,9 @@ t=0
 
 def GetContinuumRobotControl():
     global xVals, yVals, tik, tok, errorIntegral, prevError,error,t
-    xCenter = 250
-    yCenter = 250
-    freq = 0.1
+    xCenter = 314
+    yCenter = 238
+    freq = 0.01
     maxP = 100
     pi = 3.14159
 
@@ -45,22 +45,39 @@ def GetContinuumRobotControl():
     tok = time.time()  # get current time
     t = tok - tik  # time elapsed since start of program
     dt = t - prevT
-    thetaDesired = (t * 2 * pi * freq) % (2 * pi)
+    #thetaDesired = (t * 2 * pi * freq) % (2 * pi)
 
     #RadiusDesired = 150
-    r = 200
-    xDes = r*max(0,min(1, 3/2-abs(thetaDesired*2*pi/4 - 3/2)))-r/2
-    yDes = r * max(0, min(1, 3 / 2 - abs(thetaDesired * 2 * pi / 4 - 5 / 2))) - r / 2
-    RadiusDesired = math.sqrt(xDes**2 + yDes**2)
+    r = 100
+    # xDes = r*max(0,min(1, 3/2-abs(thetaDesired*2*pi/4 - 3/2)))-r/2
+    # yDes = r * max(0, min(1, 3 / 2 - abs(thetaDesired * 2 * pi / 4 - 5 / 2))) - r / 2
+    # RadiusDesired = math.sqrt(xDes**2 + yDes**2)
+
     ActualRadius = math.sqrt((xVals[-1]-xCenter)**2 + (yVals[-1]-yCenter)**2)
 
+    cycleT = t%(1/freq)
+    if cycleT >=0 and cycleT <=(1/freq)*.25:
+        xDes = r
+        yDes = -r + cycleT*2*r/(.25/freq)
+    elif cycleT >(1/freq)*.25 and cycleT <=(1/freq)*.5:
+        xDes = r - (cycleT-.25/freq)*2*r/(.25/freq)
+        yDes =r
+    elif cycleT > (1 / freq) * .5 and cycleT <= (1 / freq) * .75:
+        xDes = -r
+        yDes =r - (cycleT-.5/freq)*2*r/(.25/freq)
+    else:
+        xDes = -r + (cycleT-.75/freq)*2*r/(.25/freq)
+        yDes = -r
+
+    RadiusDesired = math.sqrt(xDes ** 2 + yDes ** 2)
+    thetaDesired = math.atan2(yDes, xDes)
     prevError = error
     error = RadiusDesired - ActualRadius
 
     errorIntegral = errorIntegral + dt *(1/2)*(prevError+error) # using trapezoidal integration
 
     kp = .1
-    ki = .01
+    ki = .2
 
     P1 = min(maxP, int(maxP / 2. + (maxP / 2.) * math.sin(thetaDesired ) + (kp*error + errorIntegral*ki)* math.sin(thetaDesired)  ))
     P2 = min(maxP, int(maxP / 2. + (maxP / 2.) * math.sin(thetaDesired + 120.0 * pi / 180.) + (kp*error + errorIntegral*ki)* math.sin(thetaDesired + 120.0 * pi / 180.)))
@@ -105,6 +122,9 @@ xVals = []
 yVals = []
 radVals = []
 thetaVals = []
+P1Vals = []
+P2Vals = []
+P3Vals = []
 
 while(True): # create our loop
 ########################################################################################
@@ -178,9 +198,15 @@ while(True): # create our loop
             yVals.append(C[0, 1].item())
             print([xVals[-1], yVals[-1]])
             P1, P2, P3, rad, theta= GetContinuumRobotControl()
+
             radVals.append(rad)
             thetaVals.append(theta)
+            P1Vals.append(P1)
+            P2Vals.append(P2)
+            P3Vals.append(P3)
+
             packAndSendMsg(P1, P2, P3)
+
 
     #Show video with contours
     cv2.imshow('Output', output)
@@ -209,13 +235,10 @@ meanX = sum(xVals) / len(xVals)
 meanY = sum(yVals) / len(yVals)
 print("Mean X,Y:"+str(meanX) +" "+str(meanY) )
 
-
-
 desX = []
 desY = []
 actualX = []
 actualY = []
-
 
 for i in range(len(thetaVals)):
     desX.append(radVals[i]*math.cos(thetaVals[i]))
@@ -224,12 +247,20 @@ for i in range(len(thetaVals)):
     actualY.append(yVals[i] - meanY)
 
 
-plt.plot(actualX, actualY, color='r')
+fig, (ax1,ax2) = plt.subplots(1,2)
 
-plt.plot(desX, desY, color='g')
-# Add labels and title
-plt.xlabel('x-axis')
-plt.ylabel('y-axis')
+ax1.plot(actualX, actualY, color='r')
+
+ax1.plot(desX, desY, color='g')
+
+ax2.plot(P1Vals)
+ax2.plot(P1Vals)
+ax2.plot(P1Vals)
 
 # Display the plot
 plt.show()
+
+# plt2.plot(P1, color='r')
+#
+# # Display the plot
+# plt2.show()
