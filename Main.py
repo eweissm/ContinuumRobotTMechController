@@ -54,7 +54,7 @@ def GetContinuumRobotControl():
 
     #for circular path
     thetaDesired = ((t * 2 * pi * freq) % (2 * pi))-pi/4
-    #RadiusDesired = 150
+    RadiusDesired = 125
 
 
     r = 100
@@ -62,38 +62,26 @@ def GetContinuumRobotControl():
     # calculate actual radius from robot's starting point
     ActualRadius = math.sqrt((xVals[-1]-xCenter)**2 + (yVals[-1]-yCenter)**2)
     ActualTheta = math.atan2(yVals[-1]-yCenter,xVals[-1]-xCenter)
-    # cycleT = t%(1/freq)
-    # if cycleT >=0 and cycleT <=(1/freq)*.25:
-    #     xDes = r
-    #     yDes = -r + cycleT*2*r/(.25/freq)
-    # elif cycleT >(1/freq)*.25 and cycleT <=(1/freq)*.5:
-    #     xDes = r - (cycleT-.25/freq)*2*r/(.25/freq)
-    #     yDes =r
-    # elif cycleT > (1 / freq) * .5 and cycleT <= (1 / freq) * .75:
-    #     xDes = -r
-    #     yDes =r - (cycleT-.5/freq)*2*r/(.25/freq)
+
+
+    # if (thetaDesired>= -pi/4 and thetaDesired<=pi/4):
+    #     xDes= 1
+    #     yDes= math.tan(thetaDesired)
+    # elif(thetaDesired> pi/4 and thetaDesired<= 3*pi/4):
+    #     xDes =1/math.tan(thetaDesired)
+    #     yDes =1
+    # elif (thetaDesired > 3*pi / 4 and thetaDesired <= 5 * pi / 4):
+    #     xDes =-1
+    #     yDes = -math.tan(thetaDesired)
     # else:
-    #     xDes = -r + (cycleT-.75/freq)*2*r/(.25/freq)
-    #     yDes = -r
+    #     xDes =-1/math.tan(thetaDesired)
+    #     yDes =-1
 
-    if (thetaDesired>= -pi/4 and thetaDesired<=pi/4):
-        xDes= 1
-        yDes= math.tan(thetaDesired)
-    elif(thetaDesired> pi/4 and thetaDesired<= 3*pi/4):
-        xDes =1/math.tan(thetaDesired)
-        yDes =1
-    elif (thetaDesired > 3*pi / 4 and thetaDesired <= 5 * pi / 4):
-        xDes =-1
-        yDes = -math.tan(thetaDesired)
-    else:
-        xDes =-1/math.tan(thetaDesired)
-        yDes =-1
-
-    xDes = xDes*r
-    yDes = yDes*r
-
-    RadiusDesired = math.sqrt(xDes ** 2 + yDes ** 2)
-    thetaDesired = math.atan2(yDes, xDes)+pi
+    # xDes = xDes*r
+    # yDes = yDes*r
+    #
+    # RadiusDesired = math.sqrt(xDes ** 2 + yDes ** 2)
+    # thetaDesired = math.atan2(yDes, xDes)+pi
 
     if thetaDesired >pi:
         thetaDesired = -pi+(thetaDesired-pi)
@@ -114,7 +102,7 @@ def GetContinuumRobotControl():
     errorIntegral = errorIntegral + dt *(1/2)*(prevError+error) # using trapezoidal integration
 
     kp = .1
-    ki = .8
+    ki = .7
     kp_theta=.2
     ki_theta = .4
     # if thetaDesired>=0-pi and thetaDesired<= (2*pi/3)-pi:
@@ -150,6 +138,9 @@ print("Connected")
 ################################################################################################
 #connect camera
 video_0 = cv2.VideoCapture(1)
+
+fourcc = cv2.VideoWriter_fourcc(*'XVID')  # You can use other codecs like MJPG, MP4V, etc.
+out = cv2.VideoWriter('output.avi', fourcc, 20.0, (640, 480))
 
 #specify color HSV bounds
 # lower boundary RED color range values; Hue (0 - 10)
@@ -225,16 +216,16 @@ while(True): # create our loop
             C[i, 0] = int(M['m10'] / M['m00'])  # cx
             C[i, 1] = int(M['m01'] / M['m00'])  # cy
             output[C[i, 1] - 2:C[i, 1] + 2, C[i, 0] - 2:C[i, 0] + 2] = [255, 255, 255]
-            output = cv2.putText(output, str(i), (C[i, 0], C[i, 1]), cv2.FONT_HERSHEY_SIMPLEX, 1, (245, 244, 66),2, cv2.LINE_AA)
+            #output = cv2.putText(output, str(i), (C[i, 0], C[i, 1]), cv2.FONT_HERSHEY_SIMPLEX, 1, (245, 244, 66),2, cv2.LINE_AA)
 
         #also lets add the center point of contour 0 to our list of coordinates
         # xVals.append(C[0, 0].item())
         # yVals.append(C[0, 1].item())
         #print([xVals[-1], yVals[-1]])
 
-        if len(contours) > 1:
-            #print("Error: Multiple Centers")
-            cv2.line(output, (C[0,0],C[0,1]),(C[1,0],C[1,1]), (255, 0, 0), 2)
+        if len(contours) >1:
+            print("Error: Multiple Centers")
+            #cv2.line(output, (C[0,0],C[0,1]),(C[1,0],C[1,1]), (255, 0, 0), 2)
         else:
 
             xVals.append(C[0, 1].item())
@@ -248,6 +239,7 @@ while(True): # create our loop
             P2Vals.append(P2)
             P3Vals.append(P3)
 
+
             packAndSendMsg(P1, P2, P3)
             #print([radVals[-1], thetaVals[-1]])
             x =int(radVals[-1]*math.cos(thetaVals[-1]) + xCenter)
@@ -258,8 +250,9 @@ while(True): # create our loop
             x = int(RadAct * math.cos(thetaAct) + xCenter)
             y = int(RadAct * math.sin(thetaAct) + yCenter)
 
-            frame[x - 3:x + 3, y - 3:y + 3] = [255, 0, 0]
+            #frame[x - 3:x + 3, y - 3:y + 3] = [255, 0, 0]
 
+    out.write(frame)
     #Show video with contours
     cv2.imshow('Output', output)
     #cv2.imshow('mask', mask)
@@ -269,9 +262,10 @@ while(True): # create our loop
         break
 
 video_0.release()
+out.release()
 cv2.destroyAllWindows()
 
-output_file = 'robot_coordinates_Square.csv'
+output_file = 'robot_coordinates_Test=.csv'
 
 # Write to CSV
 with open(output_file, mode='w', newline='') as file:
