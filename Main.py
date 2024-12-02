@@ -40,30 +40,33 @@ t=0
 xCenter = 246
 yCenter = 314
 
-def GetContinuumRobotControl():
+
+## Controller for the CR
+ def GetContinuumRobotControl():
     global xVals, yVals, tik, tok, errorIntegral, prevError,error,t, xCenter, yCenter,errorIntegralTheta, prevErrorTheta,errorTheta
 
+    #set parameters
     freq = 0.015
     maxP = 100
     pi = 3.14159
+    r = 100
 
+    ## measure times and delta t
     prevT = t
     tok = time.time()  # get current time
     t = tok - tik  # time elapsed since start of program
     dt = t - prevT
 
-    #for circular path
+    #set circular path polar trajectory as a function of t
     thetaDesired = ((t * 2 * pi * freq) % (2 * pi))-pi/4
     RadiusDesired = 125
 
-
-    r = 100
 
     # calculate actual radius from robot's starting point
     ActualRadius = math.sqrt((xVals[-1]-xCenter)**2 + (yVals[-1]-yCenter)**2)
     ActualTheta = math.atan2(yVals[-1]-yCenter,xVals[-1]-xCenter)
 
-
+    # set Rectangular path polar trajectory as a function of t
     # if (thetaDesired>= -pi/4 and thetaDesired<=pi/4):
     #     xDes= 1
     #     yDes= math.tan(thetaDesired)
@@ -83,10 +86,11 @@ def GetContinuumRobotControl():
     # RadiusDesired = math.sqrt(xDes ** 2 + yDes ** 2)
     # thetaDesired = math.atan2(yDes, xDes)+pi
 
+    # normalize theta desired to be between -pi and pi
     if thetaDesired >pi:
         thetaDesired = -pi+(thetaDesired-pi)
 
-
+    #calculate errors
     prevErrorTheta = errorTheta
     errorTheta = thetaDesired - ActualTheta
     if errorTheta >pi:
@@ -101,6 +105,7 @@ def GetContinuumRobotControl():
     print([error,errorTheta,thetaDesired,ActualTheta])
     errorIntegral = errorIntegral + dt *(1/2)*(prevError+error) # using trapezoidal integration
 
+    # set controller constants
     kp = .1
     ki = .7
     kp_theta=.2
@@ -118,6 +123,7 @@ def GetContinuumRobotControl():
     #     P2 = 0
     #     P3 = (maxP/2) + math.cos(thetaDesired*6/4)*(maxP/2+ kp*error + errorIntegral*ki)
 
+    # set Pressures for the controller
     P1 = int(maxP / 2. +  math.sin(thetaDesired  + kp_theta*errorTheta+ki_theta*errorIntegralTheta) * ((maxP / 2.) + kp*error + errorIntegral*ki))
     P2 = int(maxP / 2. +  math.sin(thetaDesired + 120.0 * pi / 180 + kp_theta*errorTheta+ki_theta*errorIntegralTheta) * ( (maxP / 2.) + kp*error + errorIntegral*ki))
     P3 = int(maxP / 2. +  math.sin( thetaDesired + 240.0 * pi / 180 + kp_theta*errorTheta+ki_theta*errorIntegralTheta)* ((maxP / 2.) + kp*error + errorIntegral*ki))
@@ -134,11 +140,12 @@ time.sleep(.1)  # delay 3 seconds to allow serial com to get established
 print("Connected")
 
 ################################################################################################
-## Robot Controls
+## Robot and Camera Loop
 ################################################################################################
 #connect camera
 video_0 = cv2.VideoCapture(1)
 
+#set up to save the video
 fourcc = cv2.VideoWriter_fourcc(*'XVID')  # You can use other codecs like MJPG, MP4V, etc.
 out = cv2.VideoWriter('output.avi', fourcc, 20.0, (640, 480))
 
