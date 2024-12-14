@@ -42,11 +42,11 @@ yCenter = 314
 
 
 ## Controller for the CR
- def GetContinuumRobotControl():
+def GetContinuumRobotControl():
     global xVals, yVals, tik, tok, errorIntegral, prevError,error,t, xCenter, yCenter,errorIntegralTheta, prevErrorTheta,errorTheta
 
     #set parameters
-    freq = 0.015
+    freq = 0.05
     maxP = 100
     pi = 3.14159
     r = 100
@@ -58,8 +58,8 @@ yCenter = 314
     dt = t - prevT
 
     #set circular path polar trajectory as a function of t
-    thetaDesired = ((t * 2 * pi * freq) % (2 * pi))-pi/4
-    RadiusDesired = 125
+    #thetaDesired = ((t * 2 * pi * freq) % (2 * pi))-pi/4
+    # RadiusDesired = 125
 
 
     # calculate actual radius from robot's starting point
@@ -67,24 +67,25 @@ yCenter = 314
     ActualTheta = math.atan2(yVals[-1]-yCenter,xVals[-1]-xCenter)
 
     # set Rectangular path polar trajectory as a function of t
-    # if (thetaDesired>= -pi/4 and thetaDesired<=pi/4):
-    #     xDes= 1
-    #     yDes= math.tan(thetaDesired)
-    # elif(thetaDesired> pi/4 and thetaDesired<= 3*pi/4):
-    #     xDes =1/math.tan(thetaDesired)
-    #     yDes =1
-    # elif (thetaDesired > 3*pi / 4 and thetaDesired <= 5 * pi / 4):
-    #     xDes =-1
-    #     yDes = -math.tan(thetaDesired)
-    # else:
-    #     xDes =-1/math.tan(thetaDesired)
-    #     yDes =-1
+    thetaDesired = ((t * 2 * pi * freq) % (2 * pi)) -pi/4
+    if (thetaDesired>= -pi/4 and thetaDesired<=pi/4):
+        xDes= 1
+        yDes= math.tan(thetaDesired)
+    elif(thetaDesired> pi/4 and thetaDesired<= 3*pi/4):
+        xDes =1/math.tan(thetaDesired)
+        yDes =1
+    elif (thetaDesired > 3*pi / 4 and thetaDesired <= 5 * pi / 4):
+        xDes =-1
+        yDes = -math.tan(thetaDesired)
+    else:
+        xDes =-1/math.tan(thetaDesired)
+        yDes =-1
 
-    # xDes = xDes*r
-    # yDes = yDes*r
-    #
-    # RadiusDesired = math.sqrt(xDes ** 2 + yDes ** 2)
-    # thetaDesired = math.atan2(yDes, xDes)+pi
+    xDes = xDes*r
+    yDes = yDes*r
+
+    RadiusDesired = math.sqrt(xDes ** 2 + yDes ** 2)
+    thetaDesired = math.atan2(yDes, xDes)+pi
 
     # normalize theta desired to be between -pi and pi
     if thetaDesired >pi:
@@ -147,15 +148,15 @@ video_0 = cv2.VideoCapture(1)
 
 #set up to save the video
 fourcc = cv2.VideoWriter_fourcc(*'XVID')  # You can use other codecs like MJPG, MP4V, etc.
-out = cv2.VideoWriter('output.avi', fourcc, 20.0, (640, 480))
+out = cv2.VideoWriter('SquareOutput_.05Hz.avi', fourcc, 20.0, (640, 480))
 
 #specify color HSV bounds
 # lower boundary RED color range values; Hue (0 - 10)
-lower1 = np.array([0, 30, 100])
+lower1 = np.array([0, 30, 120])
 upper1 = np.array([20, 255, 255])
 
 # upper boundary RED color range values; Hue (160 - 180)
-lower2 = np.array([160, 30, 100])
+lower2 = np.array([160, 30, 120])
 upper2 = np.array([179, 255, 255])
 
 # create empty list which will store our trajectory data
@@ -272,7 +273,7 @@ video_0.release()
 out.release()
 cv2.destroyAllWindows()
 
-output_file = 'robot_coordinates_Test=.csv'
+output_file = 'SquareTestForVideo_.05hz.csv'
 
 # Write to CSV
 with open(output_file, mode='w', newline='') as file:
