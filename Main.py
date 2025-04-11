@@ -148,7 +148,7 @@ video_0 = cv2.VideoCapture(1)
 
 #set up to save the video
 fourcc = cv2.VideoWriter_fourcc(*'XVID')  # You can use other codecs like MJPG, MP4V, etc.
-out = cv2.VideoWriter('SquareOutput_.05Hz.avi', fourcc, 20.0, (640, 480))
+out = cv2.VideoWriter('Calibration.avi', fourcc, 20.0, (640, 480))
 
 #specify color HSV bounds
 # lower boundary RED color range values; Hue (0 - 10)
@@ -198,7 +198,7 @@ while(True): # create our loop
     # y = 290
     # colorsB = frame[y,x,0]
     # colorsG = frame[y,x,1]
-    # colorsR = frame[y,x,2]
+    # colorsR = .frame[y,x,2]
     # colors = frame[y,x]
     # hsv_value= np.uint8([[[colorsB ,colorsG,colorsR ]]])
     # hsv = cv2.cvtColor(hsv_value,cv2.COLOR_BGR2HSV)
@@ -273,7 +273,7 @@ video_0.release()
 out.release()
 cv2.destroyAllWindows()
 
-output_file = 'SquareTestForVideo_.05hz.csv'
+output_file = 'Calibration.csv'
 
 # Write to CSV
 with open(output_file, mode='w', newline='') as file:
