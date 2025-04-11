@@ -4,17 +4,17 @@ import serial
 import time
 import math
 import csv
+import os
 
 
 global ser
 
-import os
 
 ComPort = 'COM6'
 output_file = 'C:/Users/Ericw/OneDrive/Desktop/PythonDataOutput/SimpleCR.csv'
 BATCH_SIZE = 100  # Write to file every 10 entries
 ReadFrequency = 50 #hz -- 50 for fatigue, 100 for isotonic, 1000 for response time
-
+baudRate = 115200
 
 # throw error if file already exists
 if os.path.exists(output_file):
@@ -57,8 +57,8 @@ def GetContinuumRobotControl(t):
 
     return P1, P2, P3
 
-ser = serial.Serial(port= ComPort, baudrate=9600, timeout=10)  # create Serial Object, baud = 9600, read times out after 10s
-time.sleep(.1)  # delay 3 seconds to allow serial com to get established
+ser = serial.Serial(port= ComPort, baudrate=baudRate, timeout=1)  # create Serial Object, baud = 9600, read times out after 10s
+
 print("Connected")
 
 startTime = time.time()
