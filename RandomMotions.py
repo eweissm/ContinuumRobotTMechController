@@ -26,13 +26,14 @@ buffer = []
 ## Define some functions
 ################################################################################################
 class PressureRampWithZero:
-    def __init__(self, update_interval=5, seed=None):
+    def __init__(self, update_interval=5, seed=None, maxP=30):
         """
         Initializes the ramp generator.
         One component is always 0; the others ramp to random values between 0 and 35.
         """
         self.update_interval = update_interval
         self.last_update_time = 0
+        self.maxP = maxP
 
         if seed is not None:
             np.random.seed(seed)
@@ -42,7 +43,7 @@ class PressureRampWithZero:
         self.next_targets = self._generate_targets()
 
     def _generate_targets(self):
-        targets = np.random.uniform(0, 35, 3)
+        targets = np.random.uniform(0, self.maxP, 3)
         zero_index = np.random.randint(0, 3)
         targets[zero_index] = 0
         self.zero_index = zero_index
@@ -81,6 +82,19 @@ def write_to_csv_periodic(filename, buffer):
         writer.writerows(buffer)
     buffer.clear()  # Clear buffer after writing
 
+
+def parse_message(message):
+    # Decode the byte message to a string
+    decoded_message = message.decode('utf-8').strip()  # Remove any trailing newlines or carriage returns
+
+    # Split the string into individual float strings
+    float_strings = decoded_message.split(',')
+
+    # Convert the strings to floats and append to a list
+    float_list = [float(num) for num in float_strings]
+
+    return float_list
+
 ser = serial.Serial(port= ComPort, baudrate=baudRate, timeout=1)  # create Serial Object, baud = 9600, read times out after 10s
 
 print("Connected")
@@ -88,27 +102,38 @@ print("Connected")
 startTime = time.time()
 prevTime = 0
 
-controller = PressureRampWithZero(update_interval=2, seed=1)
+controller = PressureRampWithZero(update_interval=2, seed=1, maxP=35)
 
 
 while(True): # create our loop
+    msg = ser.readline()  # read serial line til \n
 
-    t = time.time()-startTime
-    dt = t - prevTime
+    if len(msg) > 0:
+
+        try:
+            parsed_msg = parse_message(msg)  # parse message in form b'float,float,float\r\n'
+
+            t = time.time()-startTime
+            dt = t - prevTime
 
 
-    if dt > 1 / ReadFrequency:  # check if enough time has passed for us to store a message
-        prevTime = t
-        Pressures = controller.get_pressures(t)
-        P1 = Pressures[0]
-        P2 = Pressures[1]
-        P3 = Pressures[2]
-        print(Pressures)
+            if dt > 1 / ReadFrequency and not parsed_msg[-1]:  # check if enough time has passed for us to store a message
+                prevTime = t
+                Pressures = controller.get_pressures(t)
+                P1 = Pressures[0]
+                P2 = Pressures[1]
+                P3 = Pressures[2]
+                print(Pressures)
 
-        packAndSendMsg(P1, P2, P3)
+                packAndSendMsg(P1, P2, P3)
 
-        buffer.append([t, P1, P2, P3])  # store message in buffer
+                buffer.append([t, P1, P2, P3])  # store message in buffer
 
-        if len(buffer) >= BATCH_SIZE:  # when buffer is filled, write messages to the file and clear buffer
-            write_to_csv_periodic(output_file, buffer)
-            print(f"Batch written. Cycle #{t}")
+                if len(buffer) >= BATCH_SIZE:  # when buffer is filled, write messages to the file and clear buffer
+                    write_to_csv_periodic(output_file, buffer)
+                    print(f"Batch written. Cycle #{t}")
+        except UnicodeDecodeError:
+            print("UnicodeDecodeError")
+
+        except ValueError:
+            print("Invalid input. Please enter a number.")
