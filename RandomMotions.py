@@ -25,9 +25,6 @@ buffer = []
 ################################################################################################
 ## Define some functions
 ################################################################################################
-import numpy as np
-
-
 class PressureRampWithZero:
     def __init__(self, update_interval=5, seed=None):
         """
@@ -91,21 +88,22 @@ print("Connected")
 startTime = time.time()
 prevTime = 0
 
-controller = PressureRampWithZero(update_interval=10, seed=1)
+controller = PressureRampWithZero(update_interval=2, seed=1)
 
 
 while(True): # create our loop
 
     t = time.time()-startTime
     dt = t - prevTime
-    prevTime = t
+
 
     if dt > 1 / ReadFrequency:  # check if enough time has passed for us to store a message
-
+        prevTime = t
         Pressures = controller.get_pressures(t)
         P1 = Pressures[0]
         P2 = Pressures[1]
         P3 = Pressures[2]
+        print(Pressures)
 
         packAndSendMsg(P1, P2, P3)
 
